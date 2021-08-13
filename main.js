@@ -8,6 +8,8 @@ var helmet = require('helmet')
 app.use(helmet());
 var session = require('express-session')
 var MySQLStore = require('express-mysql-session')(session);
+var connection = require('./lib/db');
+var flash = require('connect-flash');
 
 var options = {
   host: 'localhost',
@@ -38,7 +40,33 @@ app.use(session({
 	store: sessionStore,
 	resave: false,
 	saveUninitialized: true
-}));
+})); 
+
+app.use(flash());
+
+// flash로 들어왔을때 실행되는 미들웨어
+// app.get('/flash', function(req, res){
+//   // Set a flash message by passing the key, followed by the value, to req.flash(). -> req.flash() 함수를 만들어준다는 의미인듯..
+//   // 그리고 session-store에다가 입력한 데이터를 집어넣어 준다.
+//   req.flash('msg', 'Flash is back!!');
+//   res.send('flash');
+// });
+
+
+// // flash의 특성상 한번 사용하면 지워진다는 휘발성 원리가 존재함.
+// app.get('/flash-display', function(req, res){
+//   // Get an array of flash messages by passing the key to req.flash()
+//   var fmsg = req.flash();
+//   console.log(fmsg);
+//   const { msg } = fmsg;
+//   console.log(msg);
+//   res.send(fmsg);
+// });
+
+const passport = require('./lib/passport')(app);
+
+
+
 
 app.get('*', function(request, response, next){
   fs.readdir('./data', function(error, filelist){
@@ -47,9 +75,10 @@ app.get('*', function(request, response, next){
   });
 });
 
+
 var indexRouter = require('./routes/index');
 var topicRouter = require('./routes/topic');
-var authRouter = require('./routes/auth');
+var authRouter = require('./routes/auth')(passport);
 
 app.use('/', indexRouter);
 app.use('/topic', topicRouter);
